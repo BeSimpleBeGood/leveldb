@@ -44,6 +44,10 @@ void PutFixed64(std::string* dst, uint64_t value) {
   dst->append(buf, sizeof(buf));
 }
 
+/*值只存在字节的低7位，最高为设置为标识位，标识后面的字节是否还存有数据
+  0000 0002  (高位)
+  1000 0001 (低，最高位为1， 表示高位还有数据)
+*/
 char* EncodeVarint32(char* dst, uint32_t v) {
   // Operate on characters as unsigneds
   unsigned char* ptr = reinterpret_cast<unsigned char*>(dst);
