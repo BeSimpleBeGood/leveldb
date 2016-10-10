@@ -51,6 +51,7 @@ class CondVar {
   // either a call to SignalAll(), or a call to Signal() that picks
   // this thread to wakeup.
   // REQUIRES: this thread holds *mu
+  //自动释放锁 并阻塞在这里，直到SignalALL 或者 有一个唤醒这个进程的信号
   void Wait();
 
   // If there are some threads waiting, wake up at least one of them.
