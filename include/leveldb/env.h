@@ -224,6 +224,11 @@ class RandomAccessFile {
 // A file abstraction for sequential writing.  The implementation
 // must provide buffering since callers may append small fragments
 // at a time to the file.
+
+/** 把文件抽象出来用于顺序写，实现时必须提供缓冲，因为调用者可能同时向文件
+*   末尾追加小片段
+*
+*/
 class WritableFile {
  public:
   WritableFile() { }

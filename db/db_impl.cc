@@ -269,7 +269,16 @@ void DBImpl::DeleteObsoleteFiles() {
     }
   }
 }
+/*
 
+edit : 局部变量
+
+save_manifest false
+
+1. 创建数据库目录，忽略出现的错误
+2. 文件锁 dbname_/LOCK
+
+*/
 Status DBImpl::Recover(VersionEdit* edit, bool *save_manifest) {
   mutex_.AssertHeld();
 
@@ -1196,7 +1205,10 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* my_batch) {
   w.sync = options.sync;
   w.done = false;
 
+  /*创建即加锁*/
   MutexLock l(&mutex_);
+
+  /*deque */
   writers_.push_back(&w);
   while (!w.done && &w != writers_.front()) {
     w.cv.Wait();
@@ -1314,6 +1326,7 @@ WriteBatch* DBImpl::BuildBatchGroup(Writer** last_writer) {
 
 // REQUIRES: mutex_ is held
 // REQUIRES: this thread is currently at the front of the writer queue
+// force  my_batch == NULL ,it must be false
 Status DBImpl::MakeRoomForWrite(bool force) {
   mutex_.AssertHeld();
   assert(!writers_.empty());
@@ -1333,8 +1346,12 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       // individual write by 1ms to reduce latency variance.  Also,
       // this delay hands over some CPU to the compaction thread in
       // case it is sharing the same core as the writer.
+      /* 我们正在达到L0设置的上限，我们开始对每一个写进程延迟一秒来延迟
+		 而不是针对单一的进程。同时这个延迟可以释放一些CPU给压缩进程以防
+		 压缩进程和写进程共享同一个核
+	  */
       mutex_.Unlock();
-      env_->SleepForMicroseconds(1000);
+      env_->SleepForMicroseconds(1000); /* usleep(micros);*/
       allow_delay = false;  // Do not delay a single write more than once
       mutex_.Lock();
     } else if (!force &&
@@ -1486,11 +1503,18 @@ Status DB::Delete(const WriteOptions& opt, const Slice& key) {
 
 DB::~DB() { }
 
+/*
+1. 创建数据库文件
+2. 创建日志文件和辅助类
+3. 创建memtable
+
+*/
 Status DB::Open(const Options& options, const std::string& dbname,
                 DB** dbptr) {
   *dbptr = NULL;
 
   DBImpl* impl = new DBImpl(options, dbname);
+  /* 这里加锁 是为了 保护什么数据呢 ?*/
   impl->mutex_.Lock();
   VersionEdit edit;
   // Recover handles create_if_missing, error_if_exists
@@ -1498,6 +1522,7 @@ Status DB::Open(const Options& options, const std::string& dbname,
   Status s = impl->Recover(&edit, &save_manifest);
   if (s.ok() && impl->mem_ == NULL) {
     // Create new log and a corresponding memtable.
+    // 创建一个 日志和一个对应的memtable
     uint64_t new_log_number = impl->versions_->NewFileNumber();
     WritableFile* lfile;
     s = options.env->NewWritableFile(LogFileName(dbname, new_log_number),

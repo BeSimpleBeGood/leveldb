@@ -690,6 +690,16 @@ class VersionSet::Builder {
       // same as the compaction of 40KB of data.  We are a little
       // conservative and allow approximately one seek for every 16KB
       // of data before triggering a compaction.
+      //我们在经历特定数目的查询后自动merge文件，我们来假设:
+      //	(1) 一次查询耗费 10 ms
+      //	(2) 读或者写1MB数据耗费 10ms (100MB/s)
+      //	(3) 在25MB的IO 上进行1MB数据的压缩:
+      //		从这一层读取1MB数据
+      //		从下一层读取10-12MB (边界可能不正确)
+      //		10-12MB 写入下一层
+      //这说明25次查询的时间和压缩1MB数据的时间是一样的。也就是说 1次查询大约相当于
+      // 40kB数据的压缩。
+      
       f->allowed_seeks = (f->file_size / 16384);
       if (f->allowed_seeks < 100) f->allowed_seeks = 100;
 
@@ -1413,6 +1423,7 @@ Compaction* VersionSet::CompactRange(
   // But we cannot do this for level-0 since level-0 files can overlap
   // and we must not pick one file and drop another older file if the
   // two files overlap.
+  // 一次不能compact过大的量，将前N个已经大于的保存下来，后面的文件描述符从inputs中移除.
   if (level > 0) {
     const uint64_t limit = MaxFileSizeForLevel(level);
     uint64_t total = 0;

@@ -8,10 +8,16 @@
 
 namespace leveldb {
 
+	// OK status has a NULL state_.  Otherwise, state_ is a new[] array
+	// of the following form:
+	//	  state_[0..3] == length of message
+	//	  state_[4]    == code
+	//	  state_[5..]  == message
+
 const char* Status::CopyState(const char* state) {
   uint32_t size;
-  memcpy(&size, state, sizeof(size));
-  char* result = new char[size + 5];
+  memcpy(&size, state, sizeof(size)); // state 中前四个字符即一个整型的大小，保存长度
+  char* result = new char[size + 5]; // size 是message 的大小
   memcpy(result, state, size + 5);
   return result;
 }

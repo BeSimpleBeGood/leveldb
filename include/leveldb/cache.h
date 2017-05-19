@@ -27,6 +27,8 @@ class Cache;
 
 // Create a new cache with a fixed size capacity.  This implementation
 // of Cache uses a least-recently-used eviction policy.
+// 创建固定容量的LRUCache
+
 extern Cache* NewLRUCache(size_t capacity);
 
 class Cache {
@@ -37,7 +39,13 @@ class Cache {
   // function that was passed to the constructor.
   virtual ~Cache();
 
+/*
+opaque
+adj.	不透明的; 无光泽的，晦暗的; 不传导性的; 含糊的，迟钝的;
+n.	不透明，晦暗; [建] 遮檐; 遮光涂料;
+*/
   // Opaque handle to an entry stored in the cache.
+  // 对外的接口
   struct Handle { };
 
   // Insert a mapping from key->value into the cache and assign it
@@ -49,6 +57,7 @@ class Cache {
   //
   // When the inserted entry is no longer needed, the key and
   // value will be passed to "deleter".
+  // 插入一个节点
   virtual Handle* Insert(const Slice& key, void* value, size_t charge,
                          void (*deleter)(const Slice& key, void* value)) = 0;
 

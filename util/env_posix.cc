@@ -432,10 +432,14 @@ class PosixEnv : public Env {
     int fd = open(fname.c_str(), O_RDWR | O_CREAT, 0644);
     if (fd < 0) {
       result = IOError(fname, errno);
+
+	  /*插入失败或者获取锁失败*/
     } else if (!locks_.Insert(fname)) {
       close(fd);
       result = Status::IOError("lock " + fname, "already held by process");
-    } else if (LockOrUnlock(fd, true) == -1) {
+
+	 /*文件锁*/
+	 } else if (LockOrUnlock(fd, true) == -1) {
       result = IOError("lock " + fname, errno);
       close(fd);
       locks_.Remove(fname);
