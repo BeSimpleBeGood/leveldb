@@ -1346,10 +1346,9 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       // individual write by 1ms to reduce latency variance.  Also,
       // this delay hands over some CPU to the compaction thread in
       // case it is sharing the same core as the writer.
-      /* 我们正在达到L0设置的上限，我们开始对每一个写进程延迟一秒来延迟
-		 而不是针对单一的进程。同时这个延迟可以释放一些CPU给压缩进程以防
-		 压缩进程和写进程共享同一个核
-	  */
+      //接近L0文件的限制数,当我们达到这个限制时，我们不去延迟某一个单一的写线程
+      //而是延迟每一个写线程 1秒 来减少延迟方差,同时这种延迟可以释放一些CPU给和写线程
+      //分享同一个核的压缩线程
       mutex_.Unlock();
       env_->SleepForMicroseconds(1000); /* usleep(micros);*/
       allow_delay = false;  // Do not delay a single write more than once
@@ -1359,6 +1358,7 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       // There is room in current memtable
       break;
     } else if (imm_ != NULL) {
+      //中间层不可修改的immtable 还没有dump出去,此时无法继续进行
       // We have filled up the current memtable, but the previous
       // one is still being compacted, so we wait.
       Log(options_.info_log, "Current memtable full; waiting...\n");

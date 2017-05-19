@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 //
+// Env 类是leveldb实现时用来访问像文件系统等操作系统功能的接口
+// 当打开一个数据库时调用者可能希望提供一个自定义的Env对象来获得更好的控制
+// 例如，限制文件系统的操作；
 // An Env is an interface used by the leveldb implementation to access
 // operating system functionality like the filesystem etc.  Callers
 // may wish to provide a custom Env object when opening a database to
